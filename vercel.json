@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "buildCommand": "cd apps/web && npm install && npm run build",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install --prefix apps/web",
+  "framework": "nextjs",
+  "regions": ["fra1"],
+  "functions": {
+    "apps/web/app/**/*.tsx": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@api_url",
+    "NEXT_PUBLIC_WS_URL": "@ws_url"
+  }
+}

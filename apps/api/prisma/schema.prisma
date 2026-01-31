@@ -1,0 +1,561 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id            String   @id @default(uuid())
+  discordId     String   @unique
+  username      String
+  discriminator String?
+  avatar        String?
+  email         String?
+  
+  // GitHub integration (optional)
+  githubId      String?  @unique
+  githubUsername String?
+  
+  // Metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  servers       ServerMember[]
+  voiceLogs     VoiceLog[]
+  serviceLogs   ServiceLog[]
+  auditLogs     AuditLog[]
+  ticketsCreated Ticket[] @relation("TicketCreator")
+  ticketsAssigned Ticket[] @relation("TicketAssignee")
+  messages      Message[]
+  eventAttendees EventAttendee[]
+  reports       Report[]
+  
+  @@map("users")
+}
+
+// ============================================
+// DISCORD SERVERS
+// ============================================
+
+model Server {
+  id          String   @id @default(uuid())
+  discordId   String   @unique
+  name        String
+  icon        String?
+  ownerId     String   // Discord owner ID
+  
+  // Configuration
+  config      ServerConfig?
+  
+  // Metadata
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  members     ServerMember[]
+  roles       Role[]
+  voiceLogs   VoiceLog[]
+  serviceLogs ServiceLog[]
+  auditLogs   AuditLog[]
+  events      Event[]
+  tickets     Ticket[]
+  chatRooms   ChatRoom[]
+  
+  @@map("servers")
+}
+
+model ServerMember {
+  id        String   @id @default(uuid())
+  userId    String
+  serverId  String
+  
+  // Discord data
+  nickname  String?
+  joinedAt  DateTime
+  
+  // Permissions & roles
+  roles     Role[]
+  
+  // Stats
+  totalVoiceTime    Int @default(0) // seconds
+  totalServiceTime  Int @default(0) // seconds
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, serverId])
+  @@map("server_members")
+}
+
+model ServerConfig {
+  id                String   @id @default(uuid())
+  serverId          String   @unique
+  
+  // Service tracking config
+  serviceChannelIds String[] // Voice channel IDs for service tracking
+  
+  // Roles config
+  staffRoleIds      String[] // Role IDs considered as staff
+  adminRoleIds      String[] // Role IDs considered as admin
+  modRoleIds        String[] // Role IDs considered as moderator
+  
+  // Features enabled
+  voiceTracking     Boolean  @default(true)
+  serviceTracking   Boolean  @default(true)
+  auditLogs         Boolean  @default(true)
+  tickets           Boolean  @default(true)
+  
+  // Notifications
+  notifyOnService   Boolean  @default(false)
+  notifyChannelId   String?  // Discord channel for notifications
+  
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("server_configs")
+}
+
+// ============================================
+// ROLES
+// ============================================
+
+model Role {
+  id          String   @id @default(uuid())
+  serverId    String
+  discordId   String   // Discord role ID
+  name        String
+  color       String?
+  position    Int      @default(0)
+  
+  // Permissions
+  permissions BigInt   @default(0) // Discord permissions bitfield
+  
+  // Dashboard permissions
+  dashboardPermissions String[] // Array of permission strings
+  
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  members     ServerMember[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([serverId, discordId])
+  @@map("roles")
+}
+
+// ============================================
+// VOICE TRACKING
+// ============================================
+
+model VoiceLog {
+  id            String   @id @default(uuid())
+  userId        String
+  serverId      String
+  
+  // Voice channel info
+  channelId     String
+  channelName   String
+  
+  // Session timing
+  joinedAt      DateTime
+  leftAt        DateTime?
+  duration      Int?     // seconds (calculated on leftAt)
+  
+  // Status tracking
+  isDeafened    Boolean  @default(false)
+  isMuted       Boolean  @default(false)
+  isSelfDeaf    Boolean  @default(false)
+  isSelfMute    Boolean  @default(false)
+  
+  // AFK calculation
+  afkDuration   Int      @default(0) // seconds in AFK state
+  activeDuration Int     @default(0) // seconds active
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId, serverId])
+  @@index([joinedAt])
+  @@map("voice_logs")
+}
+
+// ============================================
+// SERVICE TRACKING
+// ============================================
+
+model ServiceLog {
+  id            String    @id @default(uuid())
+  userId        String
+  serverId      String
+  
+  // Service info
+  channelId     String
+  channelName   String
+  
+  // Timing
+  startedAt     DateTime
+  endedAt       DateTime?
+  duration      Int?      // seconds
+  
+  // Status
+  status        ServiceStatus @default(IN_PROGRESS)
+  
+  // Notes
+  notes         String?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId, serverId])
+  @@index([startedAt])
+  @@map("service_logs")
+}
+
+enum ServiceStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================
+// AUDIT LOGS
+// ============================================
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  userId      String
+  serverId    String
+  
+  // Action info
+  action      AuditAction
+  entity      String    // Type of entity (USER, ROLE, etc.)
+  entityId    String    // ID of affected entity
+  
+  // Details
+  description String
+  metadata    Json?     // Additional data
+  
+  // Context
+  ipAddress   String?
+  userAgent   String?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([serverId, createdAt])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  // Auth
+  LOGIN
+  LOGOUT
+  
+  // Voice
+  VOICE_JOIN
+  VOICE_LEAVE
+  
+  // Service
+  SERVICE_START
+  SERVICE_END
+  
+  // Roles
+  ROLE_ASSIGN
+  ROLE_REMOVE
+  ROLE_CREATE
+  ROLE_UPDATE
+  ROLE_DELETE
+  
+  // Members
+  MEMBER_KICK
+  MEMBER_BAN
+  MEMBER_UNBAN
+  
+  // Events
+  EVENT_CREATE
+  EVENT_UPDATE
+  EVENT_DELETE
+  
+  // Tickets
+  TICKET_CREATE
+  TICKET_ASSIGN
+  TICKET_CLOSE
+  
+  // Settings
+  SETTINGS_UPDATE
+  
+  // System
+  SYSTEM
+}
+
+// ============================================
+// EVENTS / CALENDAR
+// ============================================
+
+model Event {
+  id          String   @id @default(uuid())
+  serverId    String
+  
+  // Event info
+  title       String
+  description String?
+  
+  // Timing
+  startAt     DateTime
+  endAt       DateTime?
+  
+  // Type
+  type        EventType @default(MEETING)
+  
+  // Location (optional - voice channel)
+  channelId   String?
+  channelName String?
+  
+  // Notifications
+  notifyBefore Int?    // Minutes before event
+  notified    Boolean  @default(false)
+  
+  // Status
+  status      EventStatus @default(SCHEDULED)
+  
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  attendees   EventAttendee[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([serverId, startAt])
+  @@map("events")
+}
+
+enum EventType {
+  MEETING
+  SERVICE
+  TRAINING
+  COMMUNITY
+  OTHER
+}
+
+enum EventStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model EventAttendee {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  
+  // Response
+  response  AttendeeResponse @default(PENDING)
+  notes     String?
+  
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([eventId, userId])
+  @@map("event_attendees")
+}
+
+enum AttendeeResponse {
+  PENDING
+  ACCEPTED
+  DECLINED
+  MAYBE
+}
+
+// ============================================
+// TICKETS
+// ============================================
+
+model Ticket {
+  id          String   @id @default(uuid())
+  serverId    String
+  
+  // Ticket info
+  title       String
+  description String
+  category    TicketCategory
+  priority    TicketPriority @default(MEDIUM)
+  
+  // Assignment
+  createdById String
+  assignedToId String?
+  
+  // Status
+  status      TicketStatus @default(OPEN)
+  
+  // Tags
+  tags        String[]
+  
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("TicketCreator", fields: [createdById], references: [id])
+  assignedTo  User?    @relation("TicketAssignee", fields: [assignedToId], references: [id])
+  messages    TicketMessage[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  closedAt    DateTime?
+  
+  @@index([serverId, status])
+  @@map("tickets")
+}
+
+enum TicketCategory {
+  SUPPORT
+  BUG
+  FEATURE_REQUEST
+  QUESTION
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  WAITING
+  CLOSED
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  userId    String
+  content   String
+  
+  // Attachments
+  attachments String[]
+  
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("ticket_messages")
+}
+
+// ============================================
+// INTERNAL CHAT
+// ============================================
+
+model ChatRoom {
+  id          String   @id @default(uuid())
+  serverId    String
+  name        String
+  
+  // Access control
+  allowedRoleIds String[] // Discord role IDs that can access
+  isPrivate   Boolean  @default(false)
+  
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("chat_rooms")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  roomId    String
+  userId    String
+  content   String
+  
+  // Metadata
+  edited    Boolean  @default(false)
+  editedAt  DateTime?
+  
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([roomId, createdAt])
+  @@map("messages")
+}
+
+// ============================================
+// REPORTS
+// ============================================
+
+model Report {
+  id          String   @id @default(uuid())
+  userId      String
+  
+  // Report info
+  title       String
+  content     String
+  type        ReportType
+  
+  // Period covered
+  startDate   DateTime
+  endDate     DateTime
+  
+  // Attachments
+  attachments String[]
+  
+  // Status
+  status      ReportStatus @default(DRAFT)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  submittedAt DateTime?
+  
+  @@map("reports")
+}
+
+enum ReportType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  INCIDENT
+  CUSTOM
+}
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWED
+  ARCHIVED
+}
