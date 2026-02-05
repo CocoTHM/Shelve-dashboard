@@ -13,45 +13,6 @@ Tous les endpoints (sauf auth) nécessitent un token JWT dans le header :
 Authorization: Bearer <token>
 ```
 
-### POST /auth/discord/callback
-Échange le code Discord OAuth2 contre un JWT
-
-**Body:**
-```json
-{
-  "code": "discord_oauth_code",
-  "state": "{\"serverId\":\"123\"}" // optionnel
-}
-```
-
-**Response:**
-```json
-{
-  "user": {
-    "id": "uuid",
-    "discordId": "123456789",
-    "username": "User#1234",
-    "avatar": "hash",
-    "email": "user@example.com"
-  },
-  "token": "jwt_token",
-  "expiresIn": "7d"
-}
-```
-
-### GET /auth/discord
-Obtenir l'URL d'autorisation Discord
-
-**Query Params:**
-- `serverId` (optionnel): ID du serveur Discord
-
-**Response:**
-```json
-{
-  "url": "https://discord.com/api/oauth2/authorize?..."
-}
-```
-
 ### POST /auth/refresh
 Rafraîchir le token JWT
 
@@ -536,29 +497,7 @@ Obtenir les statistiques d'un utilisateur
 **Query Params:**
 - `serverId` (requis): ID du serveur
 
-## 🐙 GitHub
-
-### GET /github/repos
-Récupérer les repositories de l'utilisateur
-
-**Query Params:**
-- `accessToken` (requis): Token d'accès GitHub
-
-### GET /github/issues
-Récupérer les issues d'un repository
-
-**Query Params:**
-- `owner` (requis): Propriétaire du repo
-- `repo` (requis): Nom du repo
-- `accessToken` (requis): Token d'accès GitHub
-
-### GET /github/pulls
-Récupérer les pull requests d'un repository
-
-### GET /github/commits
-Récupérer les commits récents d'un repository
-
-## 📡 WebSocket (Chat)
+##  WebSocket (Chat)
 
 Namespace: `/chat`
 

@@ -52,11 +52,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = configService.get('PORT') || 3001;
-  await app.listen(port);
+  const port = configService.get('PORT') || process.env.PORT || 3001;
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 API démarrée sur http://localhost:${port}`);
-  console.log(`📚 Documentation Swagger: http://localhost:${port}/api/docs`);
+  console.log(`🚀 API démarrée sur le port ${port}`);
+  console.log(`📚 Documentation Swagger: /api/docs`);
 }
 
 bootstrap();

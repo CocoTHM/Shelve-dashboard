@@ -37,7 +37,7 @@ Dashboard web de gestion et supervision pour serveurs Discord, conçu pour une u
 ## 📊 Fonctionnalités
 
 ### ✅ Implémentées
-- 🔐 Authentification OAuth2 Discord
+- 🔐 Authentification JWT
 - 📊 Dashboard temps réel
 - 📝 Système de logs complet
 - ⏱️ Tracking temps de présence vocal
@@ -45,7 +45,6 @@ Dashboard web de gestion et supervision pour serveurs Discord, conçu pour une u
 - 👥 Gestion des rôles à distance
 - 📅 Calendrier événements
 - 💬 Chat interne staff
-- 🔗 Intégration GitHub
 - 🎫 Système de tickets
 - 📄 Rapports staff
 - 🔔 Notifications
@@ -62,8 +61,6 @@ Dashboard web de gestion et supervision pour serveurs Discord, conçu pour une u
 ### Prérequis
 - Node.js 18+
 - PostgreSQL 14+
-- Application Discord (OAuth2)
-- Compte GitHub (optionnel)
 
 ### Configuration
 
@@ -79,12 +76,6 @@ Copier `.env.example` dans `apps/api/.env` et configurer:
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/discord_dashboard"
 
-# Discord
-DISCORD_CLIENT_ID="your_client_id"
-DISCORD_CLIENT_SECRET="your_client_secret"
-DISCORD_BOT_TOKEN="your_bot_token"
-DISCORD_REDIRECT_URI="http://localhost:3000/api/auth/discord/callback"
-
 # JWT
 JWT_SECRET="your_super_secret_jwt_key"
 JWT_EXPIRES_IN="7d"
@@ -93,10 +84,6 @@ JWT_EXPIRES_IN="7d"
 API_URL="http://localhost:3001"
 WEB_URL="http://localhost:3000"
 NODE_ENV="development"
-
-# GitHub (optionnel)
-GITHUB_CLIENT_ID="your_github_client_id"
-GITHUB_CLIENT_SECRET="your_github_client_secret"
 ```
 
 3. **Base de données**
@@ -118,9 +105,8 @@ npm run dev
 
 ### Première connexion
 1. Accéder à http://localhost:3000
-2. Se connecter avec Discord
-3. Autoriser l'application
-4. Sélectionner le serveur à gérer
+2. S'authentifier avec un token JWT
+3. Sélectionner le serveur à gérer
 
 ### Permissions
 Le système de permissions est basé sur les rôles Discord:
@@ -134,7 +120,7 @@ Le système de permissions est basé sur les rôles Discord:
 API REST documentée avec Swagger: `http://localhost:3001/api/docs`
 
 ### Endpoints principaux
-- `POST /auth/discord` - Authentification Discord
+- `POST /auth/refresh` - Rafraîchir le token JWT
 - `GET /stats/dashboard` - Statistiques dashboard
 - `GET /logs` - Historique logs
 - `GET /voice/presence` - Temps de présence
@@ -178,9 +164,7 @@ apps/api/
 │   ├── events/          # Module calendrier
 │   ├── tickets/         # Module tickets
 │   ├── chat/            # Module chat interne
-│   ├── github/          # Module intégration GitHub
 │   ├── notifications/   # Module notifications
-│   ├── discord-bot/     # Bot Discord service
 │   └── common/          # Guards, decorators, filters
 ```
 

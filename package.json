@@ -15,7 +15,13 @@
     "build:api": "npm run build --workspace=apps/api",
     "prisma:generate": "npm run prisma:generate --workspace=apps/api",
     "prisma:migrate": "npm run prisma:migrate --workspace=apps/api",
-    "prisma:studio": "npm run prisma:studio --workspace=apps/api"
+    "prisma:studio": "npm run prisma:studio --workspace=apps/api",
+    "deploy:setup": "node scripts/setup-deploy.js",
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:prod": "bash scripts/deploy-prod.sh",
+    "deploy:preview": "bash scripts/deploy-preview.sh",
+    "railway:login": "bash scripts/railway-login.sh",
+    "railway:token": "bash scripts/railway-token.sh"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

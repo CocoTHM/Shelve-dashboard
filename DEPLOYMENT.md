@@ -5,7 +5,7 @@ Ce guide explique comment déployer le Discord Dashboard en production.
 ## 📋 Architecture de Déploiement
 
 - **Frontend (Next.js)** → Vercel
-- **Backend (NestJS) + Bot Discord** → Railway / Render / Heroku
+- **Backend (NestJS)** → Railway / Render / Heroku
 - **Base de données PostgreSQL** → Railway / Supabase / Neon
 
 ## 🌐 Déploiement Frontend sur Vercel
@@ -114,17 +114,6 @@ JWT_EXPIRES_IN=7d
 JWT_REFRESH_SECRET=un_autre_secret_aleatoire_different_du_premier
 JWT_REFRESH_EXPIRES_IN=30d
 
-# Discord OAuth2
-DISCORD_CLIENT_ID=votre_client_id
-DISCORD_CLIENT_SECRET=votre_client_secret
-DISCORD_REDIRECT_URI=https://votre-app.vercel.app/auth/callback
-DISCORD_BOT_TOKEN=votre_bot_token
-
-# GitHub OAuth (optionnel)
-GITHUB_CLIENT_ID=votre_github_client_id
-GITHUB_CLIENT_SECRET=votre_github_client_secret
-GITHUB_REDIRECT_URI=https://votre-app.vercel.app/auth/github/callback
-
 # CORS
 CORS_ORIGIN=https://votre-app.vercel.app
 
@@ -185,19 +174,7 @@ Alternative à Railway :
 5. Ajoutez PostgreSQL (New → PostgreSQL)
 6. Ajoutez les variables d'environnement
 
-## 🔐 Configuration Discord Application
-
-⚠️ **IMPORTANT** : Mettez à jour votre application Discord avec les URLs de production
-
-1. Allez sur https://discord.com/developers/applications
-2. Sélectionnez votre application
-3. **OAuth2** → **Redirects** :
-   ```
-   https://votre-app.vercel.app/auth/callback
-   ```
-4. Mettez à jour `DISCORD_REDIRECT_URI` dans vos variables d'environnement
-
-## 🔍 Vérification du Déploiement
+##  Vérification du Déploiement
 
 ### Frontend
 ```bash
@@ -215,13 +192,6 @@ curl https://votre-api.railway.app/api/health
 https://votre-api.railway.app/api/docs
 ```
 
-### Bot Discord
-Vérifiez les logs Railway/Render :
-```
-✅ Discord bot connected as: YourBot#1234
-✅ Listening for events in X guilds
-```
-
 ## 🐛 Dépannage
 
 ### Frontend ne se connecte pas à l'API
@@ -237,15 +207,6 @@ vercel env ls
 Vérifiez que `CORS_ORIGIN` dans votre backend Railway correspond à votre URL Vercel :
 ```env
 CORS_ORIGIN=https://votre-app.vercel.app
-```
-
-### Bot Discord ne se connecte pas
-```bash
-# Vérifiez les logs Railway
-railway logs
-
-# Vérifiez que DISCORD_BOT_TOKEN est correct
-# Vérifiez que les Intents sont activés sur Discord Developers Portal
 ```
 
 ### Erreur de Base de Données

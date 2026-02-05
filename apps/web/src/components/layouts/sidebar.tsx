@@ -13,7 +13,6 @@ import {
   MessageSquare,
   Ticket,
   Settings,
-  Github,
 } from 'lucide-react';
 
 const navigation = [
@@ -56,11 +55,6 @@ const navigation = [
     name: 'Tickets',
     href: '/dashboard/tickets',
     icon: Ticket,
-  },
-  {
-    name: 'GitHub',
-    href: '/dashboard/github',
-    icon: Github,
   },
   {
     name: 'Paramètres',

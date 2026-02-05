@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 // Core modules
 import { PrismaModule } from './common/prisma/prisma.module';
+import { AppController } from './app.controller';
 
 // Feature modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -17,9 +18,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { EventsModule } from './modules/events/events.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { ChatModule } from './modules/chat/chat.module';
-import { GithubModule } from './modules/github/github.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { DiscordBotModule } from './modules/discord-bot/discord-bot.module';
 
 @Module({
   imports: [
@@ -38,9 +37,6 @@ import { DiscordBotModule } from './modules/discord-bot/discord-bot.module';
     // Database
     PrismaModule,
 
-    // Discord Bot (démarre automatiquement)
-    DiscordBotModule,
-
     // Feature modules
     AuthModule,
     UsersModule,
@@ -53,8 +49,8 @@ import { DiscordBotModule } from './modules/discord-bot/discord-bot.module';
     EventsModule,
     TicketsModule,
     ChatModule,
-    GithubModule,
     NotificationsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

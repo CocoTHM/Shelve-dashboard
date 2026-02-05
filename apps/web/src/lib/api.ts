@@ -33,12 +33,6 @@ api.interceptors.response.use(
 
 // API functions
 export const authApi = {
-  getDiscordAuthUrl: (serverId?: string) =>
-    api.get('/auth/discord', { params: { serverId } }),
-  
-  callback: (code: string, state?: string) =>
-    api.post('/auth/discord/callback', { code, state }),
-  
   refreshToken: () =>
     api.post('/auth/refresh'),
   
